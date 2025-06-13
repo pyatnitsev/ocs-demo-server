@@ -2,6 +2,16 @@ version: '3.8'
 
 services:
   osc-server:
-    build: .
+    build:
+      context: .
+      args:
+        OSC_HOST: ${OSC_HOST}
+        OSC_PORT: ${OSC_PORT}
+        WS_PORT: ${WS_PORT}
     ports:
       - "${WS_PORT:-8080}:8080"
+
+    environment:
+      OSC_HOST: ${OSC_HOST}
+      WS_PORT: ${WS_PORT}
+      OSC_PORT: ${OSC_PORT}

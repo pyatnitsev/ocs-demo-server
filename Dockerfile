@@ -7,8 +7,13 @@ RUN npm install
 
 COPY . .
 
-ENV WS_PORT=8080
-ENV OSC_HOST=192.168.1.137
-ENV OSC_PORT=8000
+ARG WS_PORT=8080
+ARG OSC_HOST=192.168.1.137
+ARG OSC_PORT=8000
+
+# Пробрасываем их как ENV, чтобы npm run build их увидел
+ENV WS_PORT=${WS_PORT}
+ENV OSC_HOST=${OSC_HOST}
+ENV OSC_PORT=${OSC_PORT}
 
 CMD ["node", "server.js"]

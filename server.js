@@ -9,6 +9,8 @@ const PING_INTERVAL = 5000; // 5 секунд
 const wss = new WebSocket.Server({ port: WS_PORT });
 
 console.log('Server started. Listening for connections: ws://0.0.0.0:%d', WS_PORT);
+console.log('OSC expected on %s:%d', OSC_HOST, OSC_PORT);
+
 
 // --- ping/pong блок ---
 function noop() {}
