@@ -8,6 +8,7 @@
   },
   "dependencies": {
     "osc-js": "^2.4.1",
+    "uuid": "^11.1.0",
     "ws": "^8.0.0"
   },
   "author": "Danil V. Pyatnitsev",

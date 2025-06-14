@@ -1,5 +1,6 @@
 const OSC = require('osc-js');
 const WebSocket = require('ws');
+const { v4: uuidv4 } = require('uuid');
 
 const WS_PORT = process.env.WS_PORT || 8080;
 const OSC_HOST = process.env.OSC_HOST || '127.0.0.1';
@@ -11,20 +12,23 @@ const wss = new WebSocket.Server({ port: WS_PORT });
 console.log('Server started. Listening for connections: ws://0.0.0.0:%d', WS_PORT);
 console.log('OSC expected on %s:%d', OSC_HOST, OSC_PORT);
 
-
 // --- ping/pong блок ---
 function noop() {}
 
 function heartbeat() {
-    console.log('heartbeat');
+    // console.log('heartbeat');
     this.isAlive = true;
 }
+
+// Храним клиентов для возможности адресации
+const clients = new Map();
 
 // Глобальный интервал для всех клиентов
 const pingInterval = setInterval(() => {
     wss.clients.forEach(function each(ws) {
         if (ws.isAlive === false) {
-            console.log('Terminating dead client connection');
+            console.log(`Terminating dead client connection (id=${ws.clientId})`);
+            clients.delete(ws.clientId);
             return ws.terminate();
         }
         ws.isAlive = false;
@@ -33,14 +37,18 @@ const pingInterval = setInterval(() => {
 }, PING_INTERVAL);
 
 wss.on('connection', function connection(ws) {
-    console.log('Client connected');
+    // Присваиваем UUID
+    ws.clientId = uuidv4();
+    clients.set(ws.clientId, ws);
+
+    console.log(`Client connected, id = ${ws.clientId}`);
 
     // ping/pong механизм
     ws.isAlive = true;
     ws.on('pong', heartbeat);
 
     ws.on('message', function incoming(message) {
-        console.log('Message received: %s', message);
+        console.log(`Message received from client ${ws.clientId}: %s`, message);
 
         try {
             const buffer = Buffer.from(message);
@@ -55,7 +63,7 @@ wss.on('connection', function connection(ws) {
 
             const stringData = oscMessage.args[0];
 
-            console.log('String received via WebSocket:', stringData);
+            console.log(`String received via WebSocket (client ${ws.clientId}):`, stringData);
 
             const oscClient = new OSC({
                 plugin: new OSC.DatagramPlugin({ send: { port: Number(OSC_PORT), host: OSC_HOST } })
@@ -68,12 +76,13 @@ wss.on('connection', function connection(ws) {
                 stringData, OSC_HOST, OSC_PORT, oscMessage.address
             );
         } catch (e) {
-            console.error('Error unpacking OSC message:', e);
+            console.error(`Error unpacking OSC message from client ${ws.clientId}:`, e);
         }
     });
 
     ws.on('close', () => {
-        console.log('Client disconnected');
+        clients.delete(ws.clientId);
+        console.log(`Client disconnected, id = ${ws.clientId}`);
     });
 });
 
